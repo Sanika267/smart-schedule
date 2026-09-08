@@ -1,0 +1,6 @@
+{
+  "name": "College Timetable Management System",
+  "description": "Automated clash-free college timetable generator using constraint satisfaction programming (CSP), with manual clash validation, substitute faculty finder, and notification system.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
