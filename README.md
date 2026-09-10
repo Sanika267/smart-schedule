@@ -4,8 +4,8 @@
 
 # Smart Schedule
 
-vaishnavi deshmukh  
-Sanika Mane  
+vaishnavi deshmukh
+Sanika Mane
 aanandi masal
 
 ## Run Locally
@@ -17,4 +17,3 @@ Prerequisite: Node.js
 2. Set `GEMINI_API_KEY` in `.env.local` if the app requires Gemini features.
 3. Start the app:
    `npm run dev`
-
