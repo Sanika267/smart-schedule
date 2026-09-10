@@ -1,5 +1,20 @@
-This is Smart Schedule
-vaishnavi deshmukh
-Sanika Mane
-Sanika Mane
+<div align="center">
+<img width="1200" height="475" alt="GHBanner" src="https://ai.google.dev/static/site-assets/images/share-ais-513315318.png" />
+</div>
+
+# Smart Schedule
+
+vaishnavi deshmukh  
+Sanika Mane  
 aanandi masal
+
+## Run Locally
+
+Prerequisite: Node.js
+
+1. Install dependencies:
+   `npm install`
+2. Set `GEMINI_API_KEY` in `.env.local` if the app requires Gemini features.
+3. Start the app:
+   `npm run dev`
+
