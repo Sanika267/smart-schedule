@@ -20,7 +20,12 @@ Currently, the system supports:
 
 ---
 
-## Features
+## Smart-Schedule Link
+
+> Automatic College Timetable Generator
+
+🌐 **Live Frontend:** https://bvcoewsmart-schedule.netlify.app
+
 
 ### Admin
 
@@ -93,6 +98,9 @@ SE → Prof. A
 TE → Prof. A
 
 INVALID ❌
+
+fronted deployment link:
+https://bvcoewsmart-schedule.netlify.app
 
 Setup
 1. Clone the Repository
