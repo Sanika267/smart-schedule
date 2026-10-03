@@ -10,20 +10,20 @@ export default function Login() {
   const { login } = useAuth();
   const navigate = useNavigate();
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
-    const loggedInUser = login(role, username, `${role}@college.edu`);
+    const loggedInUser = await login(role, username, `${role}@college.edu`, password);
     navigate(`/${loggedInUser.role}`);
   };
 
-  const handleQuickLogin = (selectedRole) => {
+  const handleQuickLogin = async (selectedRole) => {
     setRole(selectedRole);
     const demoNames = {
       admin: 'Dr. Admin Officer',
       teacher: 'Prof. S. R. Kulkarni',
       student: 'Rahul Sharma (SE-COMP)'
     };
-    const loggedInUser = login(selectedRole, demoNames[selectedRole], `${selectedRole}@college.edu`);
+    const loggedInUser = await login(selectedRole, demoNames[selectedRole], `${selectedRole}@college.edu`, 'password123');
     navigate(`/${loggedInUser.role}`);
   };
 

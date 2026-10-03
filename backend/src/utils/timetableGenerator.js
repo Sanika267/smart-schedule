@@ -1,4 +1,4 @@
-const { DAYS, TIME_SLOTS, LUNCH_SLOT_INDEX } = require('../config/constants');
+const { DAYS, TIME_SLOTS, TIME_SLOT_STRINGS, FIXED_SLOT_INDICES, LUNCH_SLOT_INDEX } = require('../config/constants');
 
 /**
  * Constraint-satisfaction timetable generator.
@@ -7,12 +7,12 @@ const { DAYS, TIME_SLOTS, LUNCH_SLOT_INDEX } = require('../config/constants');
  *  1. A teacher cannot be scheduled for two different divisions at the same day+time.
  *  2. A classroom cannot host two different divisions at the same day+time.
  *  3. A division has exactly one session per day+time (no double-booking itself).
- *  4. The lunch break slot (index 3, "12:00 - 01:00") is never assigned a real class.
+ *  4. Fixed slots (Yoga, Short Break, Lunch, Life Skills) are never assigned a real class.
  *
  * Soft goals (best-effort, improve quality but never break hard constraints):
  *  - Spread a subject's lectures across different days rather than stacking them.
  *  - Avoid scheduling the same subject twice on the same day for a division.
- *  - Lab sessions are scheduled as two consecutive slots (Batch A / Batch B).
+ *  - Lab sessions are scheduled as two consecutive schedulable slots.
  *
  * Algorithm: randomized greedy placement with backtracking. For every
  * division we build a queue of "sessions to place" (derived from each
@@ -78,7 +78,11 @@ function shuffle(array) {
   return arr;
 }
 
-const usableSlotIndices = TIME_SLOTS.map((_, idx) => idx).filter((idx) => idx !== LUNCH_SLOT_INDEX);
+// Only schedulable slots (not fixed: Yoga, Short Break, Lunch, Life Skills)
+const usableSlotIndices = TIME_SLOTS
+  .map((slot, idx) => ({ slot, idx }))
+  .filter(({ slot }) => slot.schedulable)
+  .map(({ idx }) => idx);
 
 /**
  * @param {Array} divisionsWithSubjects - [{ division, room, subjects: [...] }]
@@ -139,10 +143,16 @@ function generateTimetable(divisionsWithSubjects, options = {}) {
         if (attempt > maxAttemptsPerSession / 2) allowRepeat = true; // relax soft rule if stuck
 
         const day = DAYS[Math.floor(Math.random() * DAYS.length)];
-        const candidateSlots =
-          session.length === 2
-            ? shuffle(usableSlotIndices.filter((idx) => usableSlotIndices.includes(idx + 1) && idx + 1 !== LUNCH_SLOT_INDEX))
-            : shuffle(usableSlotIndices);
+
+        // For 2-slot labs: need two consecutive schedulable slots
+        const candidateSlots = session.length === 2
+          ? shuffle(
+              usableSlotIndices.filter((idx) =>
+                usableSlotIndices.includes(idx + 1) &&
+                !FIXED_SLOT_INDICES.includes(idx + 1)
+              )
+            )
+          : shuffle(usableSlotIndices);
 
         for (const startIdx of candidateSlots) {
           const slotIndices = session.length === 2 ? [startIdx, startIdx + 1] : [startIdx];
@@ -169,7 +179,7 @@ function generateTimetable(divisionsWithSubjects, options = {}) {
             placed.push({
               division: divisionId,
               day,
-              time: TIME_SLOTS[idx],
+              time: TIME_SLOT_STRINGS[idx], // Use time string from TIME_SLOT_STRINGS
               subject: session.subjectName,
               subjectRef: session.subjectId,
               teacher: session.teacherName || '-',
@@ -197,24 +207,26 @@ function generateTimetable(divisionsWithSubjects, options = {}) {
       }
     });
 
-    // Fill every remaining empty slot (including lunch) so the grid is complete
+    // Fill every remaining empty slot (including fixed slots) so the grid is complete
     DAYS.forEach((day) => {
-      TIME_SLOTS.forEach((time, idx) => {
+      TIME_SLOT_STRINGS.forEach((time, idx) => {
         const already = placed.find(
           (p) => p.division === divisionId && p.day === day && p.time === time
         );
         if (already) return;
 
-        if (idx === LUNCH_SLOT_INDEX) {
+        if (FIXED_SLOT_INDICES.includes(idx)) {
+          // Fixed slot: Yoga, Short Break, Lunch, Life Skills
+          const fixedSlot = TIME_SLOTS[idx];
           placed.push({
             division: divisionId,
             day,
             time,
-            subject: 'Lunch Break',
+            subject: fixedSlot.label,
             subjectRef: null,
             teacher: '-',
             teacherRef: null,
-            classroom: 'Cafeteria',
+            classroom: fixedSlot.type === 'Fixed' ? 'N/A' : 'Cafeteria',
             classroomRef: null,
             type: 'Break'
           });

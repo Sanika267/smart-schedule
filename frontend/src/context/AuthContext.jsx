@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { api } from '../services/api';
 
 const AuthContext = createContext(null);
 
@@ -15,28 +16,34 @@ export const AuthProvider = ({ children }) => {
     return null;
   });
 
-  const login = (role, username, email) => {
-    const roleTitles = {
-      admin: 'Administrator',
-      teacher: 'Faculty Teacher',
-      student: 'Student'
-    };
-    
-    const newUser = {
-      role: role.toLowerCase(),
-      name: username || `${roleTitles[role.toLowerCase()] || role}`,
-      email: email || `${role.toLowerCase()}@college.edu`,
-      department: 'Computer Engineering'
-    };
-    
-    setUser(newUser);
-    localStorage.setItem('smart_schedule_user', JSON.stringify(newUser));
-    return newUser;
+  const login = async (role, username, email, password) => {
+    try {
+      const response = await api.post('/auth/login', { email, password });
+      
+      if (response.token) {
+        localStorage.setItem('token', response.token);
+      }
+
+      const newUser = {
+        role: role.toLowerCase(),
+        name: username || response.user?.name || response.name,
+        email: email || response.user?.email || response.email,
+        department: response.user?.department || response.department || 'Computer Engineering'
+      };
+
+      setUser(newUser);
+      localStorage.setItem('smart_schedule_user', JSON.stringify(newUser));
+      return newUser;
+    } catch (error) {
+      console.error('Login failed:', error);
+      throw error;
+    }
   };
 
   const logout = () => {
     setUser(null);
     localStorage.removeItem('smart_schedule_user');
+    localStorage.removeItem('token');
   };
 
   return (
