@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { api } from '../services/api';
 import Navbar from '../components/Navbar';
 import Timetable from '../components/Timetable';
 import {
-  DUMMY_TIMETABLE,
   DEPARTMENT_INFO,
   DIVISIONS_INFO,
   DAYS
@@ -16,7 +16,9 @@ import {
   Cpu,
   Layers,
   CalendarDays,
-  Eye
+  Eye,
+  AlertCircle,
+  Loader2
 } from 'lucide-react';
 
 export default function AdminDashboard() {
@@ -25,9 +27,10 @@ export default function AdminDashboard() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationStep, setGenerationStep] = useState(0);
   const [showGenModal, setShowGenModal] = useState(false);
-  const [timetableData, setTimetableData] = useState(DUMMY_TIMETABLE);
-  const [lastGeneratedTime, setLastGeneratedTime] =
-    useState('Today at 09:30 AM');
+  const [timetableData, setTimetableData] = useState({});
+  const [lastGeneratedTime, setLastGeneratedTime] = useState('Today at 09:30 AM');
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   const steps = [
     'Analyzing department faculty workload & course credits...',
@@ -35,6 +38,30 @@ export default function AdminDashboard() {
     'Running genetic conflict prevention algorithm (Zero Teacher Clashes)...',
     'Finalizing optimized timetable matrices for SE1, SE2, SE3, TE1, and TE2...'
   ];
+
+  const fetchTimetable = async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const response = await api.get('/timetable');
+      setTimetableData(response.timetable);
+      setLastGeneratedTime(
+        new Date().toLocaleTimeString([], {
+          hour: '2-digit',
+          minute: '2-digit'
+        })
+      );
+    } catch (err) {
+      setError(err.message || 'Failed to load timetable');
+      console.error('Timetable fetch error:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchTimetable();
+  }, []);
 
   const handleGenerateTimetable = () => {
     setShowGenModal(true);
@@ -289,14 +316,37 @@ export default function AdminDashboard() {
 
 
           {/* =========================================
-              TIMETABLE
+              LOADING / ERROR / TIMETABLE
           ========================================= */}
 
-          <Timetable
-            timetableData={timetableData}
-            selectedDivision={selectedDivision}
-            selectedDay={selectedDay}
-          />
+          {isLoading ? (
+            <div className="flex items-center justify-center py-12 bg-white border border-slate-200 rounded-xl">
+              <div className="flex flex-col items-center gap-3">
+                <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
+                <p className="text-sm text-slate-600">Loading timetable from server...</p>
+              </div>
+            </div>
+          ) : error ? (
+            <div className="bg-red-50 border border-red-100 rounded-xl p-6 flex items-start gap-3">
+              <AlertCircle className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
+              <div className="text-xs space-y-1">
+                <span className="font-bold text-red-800">Failed to Load Timetable</span>
+                <p className="text-red-600 leading-relaxed">{error}</p>
+                <button
+                  onClick={fetchTimetable}
+                  className="mt-2 text-xs font-semibold text-blue-600 hover:underline cursor-pointer"
+                >
+                  Retry
+                </button>
+              </div>
+            </div>
+          ) : (
+            <Timetable
+              timetableData={timetableData}
+              selectedDivision={selectedDivision}
+              selectedDay={selectedDay}
+            />
+          )}
 
         </div>
 
