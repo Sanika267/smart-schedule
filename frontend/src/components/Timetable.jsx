@@ -1,5 +1,5 @@
 import React from 'react';
-import { TIME_SLOTS, DAYS } from '../data/dummyTimetable';
+import { DAYS } from '../data/dummyTimetable';
 import {
   BookOpen,
   User,
@@ -29,15 +29,43 @@ export default function Timetable({
   const displayedDays =
     selectedDay === 'All' ? DAYS : [selectedDay];
 
+  /* Backend-defined chronological order (matches TIME_SLOT_STRINGS in constants.js) */
+  const SLOT_ORDER = [
+    '09:00 - 09:15',
+    '09:15 - 10:15',
+    '10:15 - 11:15',
+    '11:15 - 11:30',
+    '11:30 - 12:30',
+    '12:30 - 13:30',
+    '13:30 - 14:15',
+    '14:15 - 15:15',
+    '15:15 - 16:15',
+    '16:15 - 16:30'
+  ];
+
+  /* Extract unique time slots from the data and sort by backend order */
+  const getTimeSlots = () => {
+    const firstDay = displayedDays[0];
+    const daySchedule = divData[firstDay];
+    if (!daySchedule || !daySchedule.length) return [];
+    const extracted = daySchedule.map((slot) => slot.time);
+    return extracted.sort((a, b) => {
+      const idxA = SLOT_ORDER.indexOf(a);
+      const idxB = SLOT_ORDER.indexOf(b);
+      if (idxA === -1 && idxB === -1) return 0;
+      if (idxA === -1) return 1;
+      if (idxB === -1) return -1;
+      return idxA - idxB;
+    });
+  };
+
+  const timeSlots = getTimeSlots();
+
   /* Find lecture for a given day and time */
   const getLecture = (day, timeSlot) => {
     const daySchedule = divData[day];
-
     if (!daySchedule) return null;
-
-    return daySchedule.find(
-      (item) => item.time === timeSlot
-    );
+    return daySchedule.find((item) => item.time === timeSlot);
   };
 
   /* =========================================
@@ -46,7 +74,6 @@ export default function Timetable({
 
   const getLectureBadge = (type) => {
     switch (type) {
-
       case 'Lab':
         return (
           <span className="inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-purple-50 text-purple-700 border border-purple-100">
@@ -87,9 +114,7 @@ export default function Timetable({
      ========================================= */
 
   const getLectureCardStyle = (type) => {
-
     switch (type) {
-
       case 'Lab':
         return `
           bg-purple-50
@@ -224,7 +249,7 @@ export default function Timetable({
 
           <tbody className="text-xs">
 
-            {TIME_SLOTS.map((timeSlot) => (
+            {timeSlots.map((timeSlot) => (
 
               <tr
                 key={timeSlot}
@@ -265,7 +290,7 @@ export default function Timetable({
                   }
 
 
-                  /* BREAK */
+                  /* BREAK (Fixed slots: Yoga, Short Break, Lunch, Life Skills) */
 
                   if (lecture.type === 'Break') {
 
